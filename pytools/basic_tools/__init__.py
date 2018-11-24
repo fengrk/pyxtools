@@ -1,10 +1,10 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
-import pickle
 from urllib.request import urlopen
 
 from .async_http_tool import *
+from .cache_tools import *
 from .encode_tools import *
 from .file_tools import *
 from .log import *
@@ -72,27 +72,3 @@ def remove_path_or_file(path_or_file_name):
     else:
         # file
         os.remove(path_or_file_name)
-
-
-class FileCache(object):
-    def __init__(self, pickle_file: str):
-        self.pickle_file = pickle_file
-        self.cache = self._read()
-
-    def _read(self) -> dict:
-        if not os.path.exists(self.pickle_file):
-            return {}
-
-        with open(self.pickle_file, "rb") as f:
-            return pickle.load(f)
-
-    def _write(self, cache):
-        with open(self.pickle_file, "wb") as f:
-            pickle.dump(cache, f)
-
-    def get(self, key: str):
-        return self.cache.get(key)
-
-    def set(self, key: str, value: object):
-        self.cache[key] = value
-        self._write(self.cache)
