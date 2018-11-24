@@ -7,7 +7,7 @@ import shutil
 import sys
 from optparse import OptionParser
 
-from ..basic_tools import list_files, init_logger, include_patterns, remove_empty_sub_dir, compress_by_tar
+from ..basic_tools import list_files, global_init_logger, include_patterns, remove_empty_sub_dir, compress_by_tar
 
 
 def parse_args(argv=None):
@@ -181,8 +181,13 @@ def export_package(package_name: str, target_package_name: str, common_package_l
 
 
 def export_package_helper():
-    init_logger()
-    options, args = parse_args()
+    global_init_logger()
+    if sys.argv[0] == "-c":
+        argv = list(sys.argv)
+        argv[0] = __file__
+        options, args = parse_args(argv)
+    else:
+        options, args = parse_args()
     export_package(package_name=options.source,
                    target_package_name=options.output,
                    common_package_list=[comm for comm in options.tools.split(",") if len(comm) > 0],

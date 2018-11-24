@@ -7,7 +7,7 @@ from urllib.request import urlopen
 from .async_http_tool import *
 from .encode_tools import *
 from .file_tools import *
-from .log import init_logger
+from .log import *
 from .md5_tools import *
 from .os_tools import *
 from .request_tools import *
