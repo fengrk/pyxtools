@@ -4,8 +4,6 @@ from __future__ import absolute_import
 import pickle
 from urllib.request import urlopen
 
-import chardet
-
 from .async_http_tool import *
 from .encode_tools import *
 from .file_tools import *
@@ -98,23 +96,3 @@ class FileCache(object):
     def set(self, key: str, value: object):
         self.cache[key] = value
         self._write(self.cache)
-
-
-def smart_decoder(raw_content, default_encoding_list=("utf-8", "gb18030")):
-    """
-    将字符串解码成unicode
-    :type default_encoding_list: list of str
-    :rtype: str
-    :type raw_content: bytes
-    """
-    encoding = chardet.detect(raw_content).get("encoding", "utf-8")
-
-    try:
-        return raw_content.decode(encoding)
-    except UnicodeEncodeError as e:
-        for encoding in default_encoding_list:
-            try:
-                return raw_content.decode(encoding)
-            except UnicodeEncodeError as e:
-                pass
-        raise e
