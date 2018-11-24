@@ -4,47 +4,63 @@ from __future__ import absolute_import
 import logging
 import sys
 
-_inited_logger = False
+_inited_logger_args = None
 
 
-def _init_logger(logger_level=logging.INFO):
-    """初始化日志配置"""
-
-    """
-    %(name)s            Name of the logger (logging channel)
-    %(levelno)s         Numeric logging level for the message (DEBUG, INFO,
-                        WARNING, ERROR, CRITICAL)
-    %(levelname)s       Text logging level for the message ("DEBUG", "INFO",
-                        "WARNING", "ERROR", "CRITICAL")
-    %(pathname)s        Full pathname of the source file where the logging
-                        call was issued (if available)
-    %(filename)s        Filename portion of pathname
-    %(module)s          Module (name portion of filename)
-    %(lineno)d          Source line number where the logging call was issued
-                        (if available)
-    %(funcName)s        Function name
-    %(created)f         Time when the LogRecord was created (time.time()
-                        return value)
-    %(asctime)s         Textual time when the LogRecord was created
-    %(msecs)d           Millisecond portion of the creation time
-    %(relativeCreated)d Time in milliseconds when the LogRecord was created,
-                        relative to the time the logging module was loaded
-                        (typically at application startup time)
-    %(thread)d          Thread ID (if available)
-    %(threadName)s      Thread name (if available)
-    %(process)d         Process ID (if available)
-    %(message)s         The result of record.getMessage(), computed just as
-                        the record is emitted
-    """
-    logger_format = '%(asctime)s,[%(thread)d],%(name)s,%(levelname)s,%(filename)s:%(lineno)d,%(message)s'
-
-    logging.basicConfig(stream=sys.stderr, level=logger_level, format=logger_format, datefmt='%Y-%m-%d %H:%M:%S')
+def _clear_logger_handlers(_logger):
+    while _logger.handlers:
+        _handler = _logger.handlers[0]
+        _logger.removeHandler(_handler)
 
 
-def init_logger():
-    global _inited_logger
+def _logger_config_is_same(used_args, to_use_args) -> bool:
+    if used_args[0] != to_use_args[0] or used_args[2] != to_use_args[2]:
+        return False
 
-    if _inited_logger is False:
-        _init_logger()
+    if isinstance(used_args[1], list) and isinstance(to_use_args[1], list):
+        used_sorted_args = list(used_args[1])
+        used_sorted_args.sort()
+        to_use_sorted_args = list(to_use_args[1])
+        to_use_sorted_args.sort()
+        return "<<>>".join(to_use_sorted_args) == "<<>>".join(used_sorted_args)
 
-        _inited_logger = True
+    return used_args[1] == to_use_args[1]
+
+
+def init_logger(logger_level=logging.INFO, log_file: str = None, reset_logger_name_list: list = None):
+    global _inited_logger_args
+
+    if _inited_logger_args is None \
+            or _logger_config_is_same(_inited_logger_args, (log_file, reset_logger_name_list, logger_level)):
+        logging.warning("init logger run before!")
+        return
+
+    # formatter
+    _default_formatter = logging.Formatter("%(asctime)s %(filename)s - %(name)s - %(levelname)s - %(message)s", None)
+
+    # reset other logger
+    if reset_logger_name_list is not None:
+        for logger_name in reset_logger_name_list:
+            _clear_logger_handlers(logging.getLogger(logger_name))
+
+    # reset root logger
+    root_logger = logging.getLogger()
+    _clear_logger_handlers(root_logger)
+
+    # console handler
+    _console_handler = logging.StreamHandler(sys.stdout)
+    _console_handler.setFormatter(_default_formatter)
+    root_logger.addHandler(_console_handler)
+
+    # file handler
+    if log_file is not None:
+        _file_handler = logging.FileHandler(log_file)
+        _file_handler.setFormatter(_default_formatter)
+        root_logger.addHandler(_file_handler)
+
+    root_logger.setLevel(logger_level)
+
+    _inited_logger = (log_file, list(reset_logger_name_list), logger_level)
+
+
+__all__ = ("init_logger",)
