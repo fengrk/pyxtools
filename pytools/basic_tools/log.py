@@ -27,11 +27,11 @@ def _logger_config_is_same(used_args, to_use_args) -> bool:
     return used_args[1] == to_use_args[1]
 
 
-def init_logger(logger_level=logging.INFO, log_file: str = None, reset_logger_name_list: list = None):
+def global_init_logger(logger_level=logging.INFO, log_file: str = None, reset_logger_name_list: list = None):
     global _inited_logger_args
 
-    if _inited_logger_args is None \
-            or _logger_config_is_same(_inited_logger_args, (log_file, reset_logger_name_list, logger_level)):
+    if _inited_logger_args is not None and _logger_config_is_same(_inited_logger_args,
+                                                                  (log_file, reset_logger_name_list, logger_level)):
         logging.warning("init logger run before!")
         return
 
@@ -60,7 +60,10 @@ def init_logger(logger_level=logging.INFO, log_file: str = None, reset_logger_na
 
     root_logger.setLevel(logger_level)
 
-    _inited_logger = (log_file, list(reset_logger_name_list), logger_level)
+    if reset_logger_name_list is None:
+        _inited_logger = (log_file, None, logger_level)
+    else:
+        _inited_logger = (log_file, list(reset_logger_name_list), logger_level)
 
 
-__all__ = ("init_logger",)
+__all__ = ("global_init_logger",)
