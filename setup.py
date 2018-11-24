@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 ver_dic = {}
 version_file = open("version.py")
@@ -31,11 +31,13 @@ setup(name="pytools",
       ],
 
       install_requires=[
-          "numpy>=1.6.0",
+          "requests",
+          "chardet",
+          "aiohttp>=3.1.3",
       ],
 
       author="frkhit",
       url="https://github.com/frkhit/pytools",
       author_email="frkhit@gmail.com",
       license="MIT",
-      packages=["pytools"])
+      packages=find_packages())
