@@ -17,6 +17,31 @@ from ..basic_tools import global_init_logger
 
 logger = logging.getLogger(__name__)
 
+"""
+git config:
+```
+[core]
+    fileMode = false
+    autocrlf = true
+    safecrlf = true
+```
+
+create .gitattributes file with content:
+```
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text eol=lf
+
+core.autocrlf=true
+core.fileMode=false
+```
+
+fore change crlf if found error before `git commit`
+```
+ python -c "from pytools import git_crlf_helper as g;g()" -d . -t lf -i *.py -e *.pyc
+```
+
+"""
+
 
 def git_list_status_file(path) -> list:
     """ list all file showed in `cd path && git status -s` """
