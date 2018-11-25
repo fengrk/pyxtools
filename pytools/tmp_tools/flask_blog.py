@@ -1,57 +1,60 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
-import datetime
+"""
+warning: this package not add to top level package now
+
+"""
 import json
+import datetime
 import logging
 import operator
 import os
 import re
 from itertools import takewhile
+from ..dev_tools import md2html_by_github
+from ..basic_tools import get_md5, SqliteCache
 
-import requests
 from flask_flatpages.page import Page as OldPage, cached_property, yaml
 from werkzeug.utils import import_string
-
-from ..basic_tools import get_md5, SingletonMixin, SqliteCache
 
 logger = logging.getLogger(__name__)
 
 
-class HtmlCache(SingletonMixin):
-    cache_file = "./cache.dat"
-
-    def __init__(self, ):
-        self.cache = SqliteCache(self.cache_file)
+class UrlTemplate(object):
+    @classmethod
+    def decode(cls, path):
+        """ file path to url"""
+        if not path.endswith(".html"):
+            path += ".html"
+        return path
 
     @classmethod
-    def instance(cls):
-        """
+    def encode(cls, url):
+        """url to file path"""
+        if url.endswith(".html"):
+            return url[:-5]
+        return url
 
-        :rtype: HtmlCache
-        """
-        return super(HtmlCache, cls).instance()
 
-    def get_content_id_and_html(self, md_id):
+class HtmlCache(object):
+    cache = SqliteCache("./cache.dat")
+
+    @classmethod
+    def get_content_id_and_html(cls, md_id):
         """
 
         :type md_id: str
         :rtype: (str, str)
         """
-        result = self.cache.get(md_id)
+        result = cls.cache.get(md_id)
         if result is None:
             return None, None
         return result[0], result[1]
 
-    def set_content_id_and_html(self, md_id, content_id, html_value):
-        self.cache.set(key=md_id, value=(content_id, html_value))
-
-
-def md2html_by_github(content: str) -> str:
-    """ use github api """
-    logging.info("requesting github...")
-    url = "https://api.github.com/markdown"
-    return requests.post(url, data=json.dumps({"text": content, "mode": "markdown"})).text
+    @classmethod
+    def set_content_id_and_html(cls, md_id, content_id, html_value):
+        cls.cache.set(key=md_id, value=(content_id, html_value))
 
 
 class Page(OldPage):
@@ -62,10 +65,10 @@ class Page(OldPage):
         :type meta: str
         :type path: str
         """
-        super(Page, self).__init__(path, meta, body, html_renderer)
+        super(Page, self).__init__(UrlTemplate.decode(path), meta, body, html_renderer)
 
         # date re
-        self.date_re = re.compile(r"[\d]{4}/[\d]{2}/[\d]{2}(?=/)")
+        self.date_re = re.compile(r"[\d]{4}-[\d]{2}-[\d]{2}(?=-)")
 
         # 执行meta方法
         if self.meta:
@@ -78,12 +81,19 @@ class Page(OldPage):
         """
         file_name_id = get_md5(self.path.encode("utf-8"))
 
-        old_content_id, content_html = HtmlCache.instance().get_content_id_and_html(file_name_id)
+        old_content_id, content_html = HtmlCache.get_content_id_and_html(file_name_id)
         current_content_id = get_md5(self.body.encode("utf-8"))
 
         if content_html is None or old_content_id != current_content_id:
-            content_html = md2html_by_github(self.body)
-            HtmlCache.instance().set_content_id_and_html(file_name_id, current_content_id, content_html)
+            content_html = None
+            try:
+                content_html = md2html_by_github(self.body)
+                msg = json.loads(content_html)
+                logger.warning("get msg from github: {}".format(msg))
+            except Exception as e:
+                logger.error(e)
+                if content_html is not None:
+                    HtmlCache.set_content_id_and_html(file_name_id, current_content_id, content_html)
 
         return content_html
 
@@ -125,12 +135,12 @@ class Page(OldPage):
 
     def _get_date_from_path(self, path):
         """
-            文件命名: /2018/01/31/xxx.md
+            文件命名: 2018-01-31-xxx.md
         :rtype: datetime.date
         """
         result = self.date_re.findall(path)
         if result:
-            return datetime.datetime.strptime(result[0], "%Y/%m/%d").date()
+            return datetime.datetime.strptime(result[0], "%Y-%m-%d").date()
         return None
 
 
@@ -161,4 +171,4 @@ def flat_pages_parse(self, content, path):
     return Page(path, meta, content, html_renderer)
 
 
-__all__ = ("md2html_by_github", "flat_pages_parse", "Page", "HtmlCache")
+__all__ = ("flat_pages_parse", "Page", "HtmlCache", "UrlTemplate")
