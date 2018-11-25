@@ -8,6 +8,7 @@ import os
 import shutil
 import tarfile
 import time
+import zipfile
 
 
 def list_files(folder):
@@ -116,3 +117,8 @@ def check_file_exists(func):
         return result
 
     return check
+
+
+def zip_compress_file(src_file_path, zip_file_path):
+    with zipfile.ZipFile(zip_file_path, mode="w") as zf:
+        zf.write(src_file_path, os.path.basename(src_file_path), compress_type=zipfile.ZIP_DEFLATED)
