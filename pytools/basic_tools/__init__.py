@@ -12,6 +12,7 @@ from .md5_tools import *
 from .os_tools import *
 from .request_tools import *
 from .singleton_tools import *
+from .socket_tools import *
 
 
 def set_proxy(http_proxy="http://127.0.0.1:8118"):

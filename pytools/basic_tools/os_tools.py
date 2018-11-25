@@ -5,7 +5,7 @@ import shutil
 import sys
 import time
 import traceback
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, check_output
 
 
 def backup_linux_history(target_file_path):
@@ -92,3 +92,18 @@ def stacktraces():
                 code.append("  %s" % (line.strip()))
 
     return "\n".join(code)
+
+
+def windows_process_exists_by_name(process_name: str) -> bool:
+    """
+    ref: https://stackoverflow.com/questions/7787120/python-check-if-a-process-is-running-or-not
+    :rtype: bool
+    :param process_name: str
+    """
+    # shell=True hides the shell window, stdout to PIPE enables
+    raw_lines = check_output(
+        ['TASKLIST', '/FI', 'imagename eq {}'.format(process_name)], shell=True) \
+        .decode("utf-8").split("\r\n")
+
+    # if TASKLIST returns single line without processname: it's not running
+    return len(raw_lines) > 1 and process_name in raw_lines[-1]
