@@ -193,5 +193,23 @@ def md2html_by_github(content: str) -> str:
     return requests.post(url, data=json.dumps({"text": content, "mode": "markdown"})).text
 
 
+def git_export(export_zip_file_name: str, git_project_path: str = "./"):
+    """
+        导出git项目的纯净代码
+
+        git archive --format zip --output "./output.zip" master -0
+        # 将代码导出并 zip 打包后放在当前目录下，`output.zip`就是需要的文件，`-0`的意思是不压缩
+    """
+    current = os.getcwd()
+    try:
+        os.chdir(git_project_path)
+        process = subprocess.Popen(
+            ["git", "archive", "master", "--format", "zip", "--output", export_zip_file_name, ]
+        )
+        process.wait()
+    finally:
+        os.chdir(current)
+
+
 __all__ = ("git_list_status_file", "is_git_repo_log_dir", "git_crlf_fatal_file",
-           "find_git_log_dir", "md2html_by_github", "git_crlf_helper")
+           "find_git_log_dir", "md2html_by_github", "git_crlf_helper", "git_export")
