@@ -103,8 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# setup.py build info
-build/
-dist/
-*.egg-info/
+# ide
+.idea/
+.vscode/
+
 
