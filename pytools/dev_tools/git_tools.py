@@ -211,5 +211,16 @@ def git_export(export_zip_file_name: str, git_project_path: str = "./"):
         os.chdir(current)
 
 
+def git_fetch_all(git_path: str):
+    """ run `cd git_path && git fetch --all` """
+    raw_path = os.getcwd()
+    try:
+        os.chdir(git_path)
+        subprocess.Popen(["git", "fetch", "--all"]).wait()
+    finally:
+        os.chdir(raw_path)
+
+
 __all__ = ("git_list_status_file", "is_git_repo_log_dir", "git_crlf_fatal_file",
-           "find_git_log_dir", "md2html_by_github", "git_crlf_helper", "git_export")
+           "find_git_log_dir", "md2html_by_github", "git_crlf_helper", "git_export",
+           "git_fetch_all")
