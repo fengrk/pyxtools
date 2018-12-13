@@ -128,7 +128,8 @@ def copy_package(source_folder: str, target_foler: str, common_package_list: lis
         copy_package_tree(
             os.path.join(current_dir, common_package),
             os.path.join(target_foler, common_package))
-        py_file_list = list_files(os.path.join(target_foler, common_package))
+        py_file_list = [file_name for file_name in
+                        list_files(os.path.join(target_foler, common_package)) if file_name.endswith(".py")]
         for py_file in py_file_list:
             change_import_package(py_file, old_package_name, new_package_name)
 
