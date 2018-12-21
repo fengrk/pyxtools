@@ -2,12 +2,13 @@
 from __future__ import absolute_import
 
 import logging
-import os
-import shutil
 import sys
 from optparse import OptionParser
 
-from ..basic_tools import list_files, global_init_logger, include_patterns, remove_empty_sub_dir, compress_by_tar
+import os
+import shutil
+
+from ..basic_tools import list_files, global_init_logger, remove_empty_sub_dir, compress_by_tar
 
 
 def parse_args(argv=None):
@@ -94,9 +95,7 @@ def copy_package(source_folder: str, target_foler: str, common_package_list: lis
         """
         only copy *.py in dir
         """
-        shutil.copytree(source, target,
-                        symlinks=False,
-                        ignore=include_patterns("*.py"))
+        shutil.copytree(source, target, symlinks=False)
 
         # just remove empty folder
         remove_empty_sub_dir(target, remove_input_folder=False)
