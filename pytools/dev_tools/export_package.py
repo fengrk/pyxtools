@@ -36,10 +36,10 @@ def compress_folder(source_folder, target_file_name):
     compress_by_tar(source_folder, target_file_name, absolute_dir=False)
 
 
-def copy_package(source_folder: str, target_foler: str, common_package_list: list,
+def copy_package(source_folder: str, target_folder: str, common_package_list: list,
                  current_dir: str):
     """
-    if target_foler exists, it would remove target_foler first
+    if target_folder exists, it would remove target_folder first
     """
 
     def check_import_package(py_content: str, package_name_list: list) -> bool:
@@ -91,6 +91,35 @@ def copy_package(source_folder: str, target_foler: str, common_package_list: lis
 
         return common_package_using_list
 
+    def move_common_package(comm_pkn: str, new_pkn: str) -> list:
+        # copy package
+        copy_package_tree(
+            os.path.join(current_dir, comm_pkn),
+            os.path.join(target_folder, comm_pkn))
+
+        _py_file_list = [file_name for file_name in
+                         list_files(os.path.join(target_folder, comm_pkn)) if file_name.endswith(".py")]
+
+        common_package_using_list = []
+        for _py_file in _py_file_list:
+            using_count = len(common_package_using_list)
+
+            with open(_py_file, "r", encoding="utf-8") as f:
+                _py_content = f.read()
+
+            for comm in common_package_list:
+                _py_content, _common_package_found = change_import_package(
+                    _py_content, comm, "{}.{}".format(new_pkn, comm)
+                )
+                if _common_package_found:
+                    common_package_using_list.append(comm)
+
+            if len(common_package_using_list) > using_count:
+                with open(_py_file, "w", encoding="utf-8") as fw:
+                    fw.write(_py_content)
+
+        return common_package_using_list
+
     def copy_package_tree(source: str, target: str):
         """
         only copy *.py in dir
@@ -100,19 +129,19 @@ def copy_package(source_folder: str, target_foler: str, common_package_list: lis
         # just remove empty folder
         remove_empty_sub_dir(target, remove_input_folder=False)
 
-    logging.info("copy package from {} to {}".format(source_folder, target_foler))
+    logging.info("copy package from {} to {}".format(source_folder, target_folder))
     old_package_name = os.path.basename(source_folder)
-    new_package_name = os.path.basename(target_foler)
+    new_package_name = os.path.basename(target_folder)
 
     # copy package dir
-    if os.path.exists(target_foler):
-        logging.warning("remove {}".format(target_foler))
-        os.remove(target_foler)
+    if os.path.exists(target_folder):
+        logging.warning("remove {}".format(target_folder))
+        os.remove(target_folder)
 
-    copy_package_tree(source_folder, target_foler)
+    copy_package_tree(source_folder, target_folder)
 
     # change root import
-    py_file_list = [file_name for file_name in list_files(target_foler) if file_name.endswith(".py")]
+    py_file_list = [file_name for file_name in list_files(target_folder) if file_name.endswith(".py")]
     use_comm_pkn = list()
     for py_file in py_file_list:
         use_comm_pkn.extend(change_common_import(py_file, old_package_name, new_package_name))
@@ -123,14 +152,20 @@ def copy_package(source_folder: str, target_foler: str, common_package_list: lis
         logging.warning("not use {}".format(common_package_list))
         return
 
-    for common_package in use_comm_pkn:
-        copy_package_tree(
-            os.path.join(current_dir, common_package),
-            os.path.join(target_foler, common_package))
-        py_file_list = [file_name for file_name in
-                        list_files(os.path.join(target_foler, common_package)) if file_name.endswith(".py")]
-        for py_file in py_file_list:
-            change_import_package(py_file, old_package_name, new_package_name)
+    # move common package
+    to_move_comm_pkn = set(use_comm_pkn)
+    moved_comm_pkn = set()
+    while True:
+        if not to_move_comm_pkn:
+            break
+
+        common_package = to_move_comm_pkn.pop()
+
+        if common_package not in moved_comm_pkn:
+            to_move_comm_pkn.union(
+                set(move_common_package(common_package, new_package_name))
+            )
+            moved_comm_pkn.add(common_package)
 
 
 def export_package(package_name: str, target_package_name: str, common_package_list: list,
