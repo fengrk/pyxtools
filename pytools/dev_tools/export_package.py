@@ -57,13 +57,22 @@ def copy_package(source_folder: str, target_folder: str, common_package_list: li
 
     def change_import_package(py_content: str, old_pkn: str, new_pkn: str):
         _package_found = False
-        str_list = ["from {} ".format(old_pkn), "from {}.".format(old_pkn)]
+        str_list = [
+            "from {} ".format(old_pkn), "from {}.".format(old_pkn),
+            "import {}.".format(old_pkn),
+        ]
 
         for str_pattern in str_list:
             if py_content.find(str_pattern) > -1:
                 _package_found = True
                 py_content = py_content.replace(
                     str_pattern, str_pattern.replace(old_pkn, new_pkn, 1))
+
+        str_pattern = "import {}\n".format(old_pkn)
+        if py_content.find(str_pattern) > -1:
+            _package_found = True
+            py_content = py_content.replace(
+                str_pattern, str_pattern.replace(old_pkn, new_pkn + " as {}".format(old_pkn), 1))
 
         return py_content, _package_found
 
