@@ -3,11 +3,10 @@ import logging
 import pickle
 from threading import Lock
 
+import faiss
 import numpy as np
 import os
 from enum import Enum
-
-from . import faiss_gpu
 
 
 class IndexType(Enum):
@@ -125,7 +124,7 @@ class FaissManager(object):
         if not os.path.exists(self.faiss_index_file):
             raise Exception("{} not exists!".format(self.faiss_index_file))
 
-        return faiss_gpu.read_index(self.faiss_index_file)
+        return faiss.read_index(self.faiss_index_file)
 
     def prepare_index(self):
         # index
@@ -137,25 +136,28 @@ class FaissManager(object):
             return
 
         # create index
-        quantizer = faiss_gpu.IndexFlatL2(self.dimension)  # this remains the same
+        quantizer = faiss.IndexFlatL2(self.dimension)  # this remains the same
         n_list = 10
         m = 8  # number of bytes per vector
         if self.index_type == IndexType.accurate:
             self.faiss_index = quantizer
         elif self.index_type == IndexType.fast:
             if self.has_gpu:
-                index_ivf = faiss_gpu.IndexIVFFlat(quantizer, self.dimension, n_list, faiss_gpu.METRIC_L2)
-                self.faiss_index = faiss_gpu.index_cpu_to_gpu(faiss_gpu.StandardGpuResources(), 0, index_ivf)
+                index_ivf = faiss.IndexIVFFlat(quantizer, self.dimension, n_list, faiss.METRIC_L2)
+                self.faiss_index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index_ivf)
             else:
-                self.faiss_index = faiss_gpu.IndexIVFFlat(quantizer, self.dimension, n_list, faiss_gpu.METRIC_L2)
+                self.faiss_index = faiss.IndexIVFFlat(quantizer, self.dimension, n_list, faiss.METRIC_L2)
         elif self.index_type == IndexType.compress:
-            self.faiss_index = faiss_gpu.IndexIVFPQ(quantizer, self.dimension, n_list, m, 8)
+            self.faiss_index = faiss.IndexIVFPQ(quantizer, self.dimension, n_list, m, 8)
 
     def save(self, ):
         assert self.faiss_index is not None
 
         with self._lock:
-            faiss_gpu.write_index(self.faiss_index, self.faiss_index_file)
+            faiss.write_index(self.faiss_index, self.faiss_index_file)
 
             with open(self._pkl_file, "wb") as f:
                 pickle.dump(self.index_info, f)
+
+
+__all__ = ("faiss", "IndexType", "FaissStoreInfo", "FaissManager")

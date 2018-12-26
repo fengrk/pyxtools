@@ -34,6 +34,7 @@ setup(name="pytools",
           "requests",
           "chardet",
           "aiohttp>=3.1.3",
+          "faiss-prebuilt",
       ],
 
       author="frkhit",
