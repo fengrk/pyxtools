@@ -55,6 +55,7 @@ class FaissStoreInfo(object):
 class FaissManager(object):
     """
     """
+    not_found_id = -1
 
     def __init__(self, index_path: str, dimension: int,
                  index_type: IndexType = IndexType.accurate,
@@ -109,12 +110,20 @@ class FaissManager(object):
             feature = np.vstack(feature_list).reshape((len(feature_list), self.dimension))
         return feature
 
-    def search(self, feature_list, top_k=10):
+    def search(self, feature_list, top_k=10) -> (list, list):
         self.prepare_index()
         feature = self.reshape_feature_list(feature_list)
         distance_list, indices = self.faiss_index.search(feature, top_k)
 
-        return distance_list, indices
+        if isinstance(feature_list, list):
+            length = len(feature_list)
+        else:
+            length = feature_list.shape[0]
+
+        distance_list = distance_list.reshape((length, top_k))
+        indices = indices.reshape((length, top_k))
+
+        return [distance for distance in distance_list], [indice for indice in indices]
 
     def _restore(self):
         """

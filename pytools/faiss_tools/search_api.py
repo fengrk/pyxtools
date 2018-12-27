@@ -26,6 +26,9 @@ class ImageIndexUtils(object):
         for index in range(len(distance_list)):
             image_result_list = []
             for i, image_id in enumerate(indices[index]):
+                if image_id == self.manager.not_found_id:
+                    continue
+
                 result_info = self.manager.get_faiss_info_obj(image_id)
                 info = {self._key_distance: distance_list[index][i], self._key_top_k: i}
                 info.update(result_info.to_dict())
