@@ -7,9 +7,9 @@
 import numpy as np
 
 try:
-    from pytools.faiss_tools import faiss
+    from pyxtools.faiss_tools import faiss
 except ImportError:
-    from pytools.pytools.faiss_tools import faiss
+    from pyxtools.pyxtools.faiss_tools import faiss
 
 
 def test_1():

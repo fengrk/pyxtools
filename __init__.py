@@ -20,4 +20,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .pytools import *  # make this repo working as a subpackage of another repo
+from .pyxtools import *  # make this repo working as a subpackage of another repo

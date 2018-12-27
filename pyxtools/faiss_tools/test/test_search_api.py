@@ -9,9 +9,9 @@ import random
 import shutil
 
 try:
-    from pytools.faiss_tools import ImageIndexUtils
+    from pyxtools.faiss_tools import ImageIndexUtils
 except ImportError:
-    from pytools.pytools.faiss_tools import ImageIndexUtils
+    from pyxtools.pyxtools.faiss_tools import ImageIndexUtils
 
 
 class TestImageIndexUtils(unittest.TestCase):

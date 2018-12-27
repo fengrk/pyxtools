@@ -37,7 +37,7 @@ core.fileMode=false
 
 fore change crlf if found error before `git commit`
 ```
- python -c "from pytools import git_crlf_helper as g;g()" -d . -t lf -i *.py -e *.pyc
+ python -c "from pyxtools import git_crlf_helper as g;g()" -d . -t lf -i *.py -e *.pyc
 ```
 
 """

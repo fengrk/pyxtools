@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import unittest
 
-from ..pytools import iter_list_with_size
+from ..pyxtools import iter_list_with_size
 
 
 class TestBasicTools(unittest.TestCase):

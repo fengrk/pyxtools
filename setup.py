@@ -11,7 +11,7 @@ finally:
 
 exec(compile(version_file_contents, "version.py", 'exec'), ver_dic)
 
-setup(name="pytools",
+setup(name="pyxtools",
       version=ver_dic["VERSION_TEXT"],
       description="simple tool for Python3.6",
       long_description=open("README.rst", "r").read(),
@@ -38,7 +38,7 @@ setup(name="pytools",
       ],
 
       author="frkhit",
-      url="https://github.com/frkhit/pytools",
+      url="https://github.com/frkhit/pyxtools",
       author_email="frkhit@gmail.com",
       license="MIT",
       packages=find_packages())
