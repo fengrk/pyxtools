@@ -17,6 +17,11 @@ from .singleton_tools import *
 from .socket_tools import *
 
 
+def set_time_zone(tz: str = "Asia/Shanghai"):
+    os.environ['TZ'] = tz
+    time.tzset()
+
+
 def set_proxy(http_proxy="http://127.0.0.1:8118"):
     """ 设置代理 """
     os.environ["https_proxy"] = http_proxy
