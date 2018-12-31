@@ -20,7 +20,7 @@ class TestSqlAlchemy(unittest.TestCase):
             os.remove(self.file)
 
     def testClose(self):
-        engine = get_sqlite_engine(sqite_file=self.file)
+        engine = get_sqlite_engine(sqlite_file=self.file)
         db_session = get_sqlite_session(engine=engine)
         self.assertEqual(id(db_session.bind), id(engine))
 

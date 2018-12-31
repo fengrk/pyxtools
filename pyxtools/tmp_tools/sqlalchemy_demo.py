@@ -17,8 +17,6 @@ from ..basic_tools import get_md5
 
 Base = declarative_base()
 
-current_dir = os.path.dirname(__file__)
-
 
 def adapt_array(arr):
     """
@@ -36,20 +34,16 @@ def convert_array(text):
     return np.load(out)
 
 
-def get_sqlite_engine(sqite_file="tmp.dat"):
+def get_sqlite_engine(sqlite_file="tmp.dat"):
     """
 
-    :rtype: Enginel
+    :rtype: Engine
     """
-    return create_engine("sqlite:///{}".format(os.path.join(current_dir, sqite_file)),
+    return create_engine("sqlite:///{}".format(os.path.abspath(sqlite_file)),
                          echo=False).connect()
 
 
-def get_sqlite_session(engine):
-    """
-
-    :rtype: Session
-    """
+def get_sqlite_session(engine) -> Session:
     return sessionmaker(bind=engine)()
 
 
@@ -76,13 +70,13 @@ class RecordMixin(object):
         :rtype: Engine
         """
         if cls._engine is None:
-            cls._engine = get_sqlite_engine(sqite_file=cls.sqlite_file)
+            cls._engine = get_sqlite_engine(sqlite_file=cls.sqlite_file)
 
         return cls._engine
 
     @classmethod
     def get_new_session(cls) -> Session:
-        return get_sqlite_session(engine=get_sqlite_engine(sqite_file=cls.sqlite_file))
+        return get_sqlite_session(engine=get_sqlite_engine(sqlite_file=cls.sqlite_file))
 
     @classmethod
     def destroy_new_session(cls, db_session: Session):
