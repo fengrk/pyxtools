@@ -20,7 +20,7 @@ class IndexType(Enum):
     def to_train(self) -> bool:
         if self.name == "compress":
             return True
-        return True
+        return False
 
     @property
     def index_factory(self) -> str:
