@@ -7,7 +7,9 @@ from .faiss_utils import FaissManager
 
 
 class ImageIndexUtils(object):
-    def __init__(self, index_dir: str, dimension: int, ):
+    key_extend_list = "extend_list"
+
+    def __init__(self, index_dir: str, dimension: int):
         self.logger = logging.getLogger(self.__class__.__name__)
         if not os.path.exists(index_dir):
             os.mkdir(index_dir)
@@ -32,15 +34,18 @@ class ImageIndexUtils(object):
                 result_info = self.manager.get_faiss_info_obj(image_id)
                 info = {self._key_distance: distance_list[index][i], self._key_top_k: i}
                 info.update(result_info.to_dict())
-                image_result_list.append(info)
 
                 # 扩展
                 if extend and result_info.list_extend_image_id():
+                    extend_list = []
                     for extend_image_id in result_info.list_extend_image_id():
                         tmp_info = info.copy()
                         tmp_info.update(self.manager.get_faiss_info_obj(extend_image_id).to_dict())
-                        image_result_list.append(tmp_info)
+                        extend_list.append(tmp_info)
 
+                    info[self.key_extend_list] = extend_list
+
+                image_result_list.append(info)
             result_list.append(image_result_list)
 
         return result_list

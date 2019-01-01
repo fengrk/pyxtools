@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import logging
 import pickle
+import time
 from threading import Lock
 
 import faiss
@@ -13,6 +14,24 @@ class IndexType(Enum):
     accurate = 0
     fast = 1
     compress = 2
+    auto = 3
+
+    @property
+    def to_train(self) -> bool:
+        if self.name == "compress":
+            return True
+        return True
+
+    @property
+    def index_factory(self) -> str:
+        if self.name == "accurate":
+            return "Flat"
+        elif self.name == "fast":
+            return "IVFx,Flat"
+        elif self.name == "compress":
+            return "IVF100,PQ8"
+
+        return "Flat"
 
 
 class FaissStoreInfo(object):
@@ -98,7 +117,13 @@ class FaissManager(object):
         self.index_info = FaissStoreInfo.parse_extend_list(index_info)
 
         feature = self.reshape_feature_list(feature_list)
-        # self.index.train(feature)  # nb * d
+
+        if self.index_type.to_train:
+            self.logger.info("training index...")
+            time_start = time.time()
+            self.faiss_index.train(feature)  # nb * d
+            self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
+
         self.faiss_index.add(feature)
         self.save()
 
@@ -145,19 +170,11 @@ class FaissManager(object):
             return
 
         # create index
-        quantizer = faiss.IndexFlatL2(self.dimension)  # this remains the same
-        n_list = 10
-        m = 8  # number of bytes per vector
-        if self.index_type == IndexType.accurate:
-            self.faiss_index = quantizer
-        elif self.index_type == IndexType.fast:
+        if self.index_type.index_factory:
+            self.faiss_index = faiss.index_factory(self.dimension, self.index_type.index_factory)
             if self.has_gpu:
-                index_ivf = faiss.IndexIVFFlat(quantizer, self.dimension, n_list, faiss.METRIC_L2)
-                self.faiss_index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index_ivf)
-            else:
-                self.faiss_index = faiss.IndexIVFFlat(quantizer, self.dimension, n_list, faiss.METRIC_L2)
-        elif self.index_type == IndexType.compress:
-            self.faiss_index = faiss.IndexIVFPQ(quantizer, self.dimension, n_list, m, 8)
+                res = faiss.StandardGpuResources()  # use a single GPU
+                self.faiss_index = faiss.index_cpu_to_gpu(res, 0, self.faiss_index)
 
     def save(self, ):
         assert self.faiss_index is not None
