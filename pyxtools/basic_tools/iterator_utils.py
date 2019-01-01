@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import random
+
 
 def iter_list_with_size(src_list: list, size: int):
     """
@@ -17,4 +19,16 @@ def iter_list_with_size(src_list: list, size: int):
             break
 
 
-__all__ = ("iter_list_with_size",)
+def random_choice(src_list, k: int = 1, unique: bool = True):
+    if unique is False:
+        return random.choices(src_list, k=k)
+
+    assert k <= len(src_list)
+    tmp_list = list(src_list)
+    random.seed(0)
+    random.shuffle(tmp_list)
+    random.shuffle(tmp_list)
+    return tmp_list[:k]
+
+
+__all__ = ("iter_list_with_size", "random_choice")
