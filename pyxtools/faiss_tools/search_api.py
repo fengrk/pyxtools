@@ -23,37 +23,44 @@ class ImageIndexUtils(object):
         self._key_top_k = "top"
 
     def image_search(self, feature_list: list, top_k: int = 3, extend: bool = False) -> list:
-        distance_list, indices = self.manager.search(feature_list, top_k=top_k)
-        result_list = []
-        for index in range(len(distance_list)):
-            image_result_list = []
-            for i, image_id in enumerate(indices[index]):
-                if image_id == self.manager.not_found_id:
-                    continue
+        return [
+            result for result in self.image_search_iterator(feature_list=feature_list, top_k=top_k, extend=extend)
+        ]
 
-                result_info = self.manager.get_faiss_info_obj(image_id)
+    def image_search_iterator(self, feature_list: list, top_k: int = 3, extend: bool = False):
+        distance_list, indices = self.manager.search(feature_list, top_k=top_k)
+
+        for index in range(distance_list.shape[0]):
+            image_result_list = []
+
+            for i in range(top_k):
+                image_index = indices[index][i]
+                if image_index == self.manager.not_found_id:
+                    break
+
+                result_info = self.manager.index_info_list[image_index]
                 info = {self._key_distance: distance_list[index][i], self._key_top_k: i}
-                info.update(result_info.to_dict())
+                info.update(result_info)
+                extend_image_index_list = info.pop(self.manager.key_extend_list) if \
+                    result_info.get(self.manager.key_extend_list) else None
 
                 # 扩展
-                if extend and result_info.list_extend_image_id():
+                if extend and extend_image_index_list:
                     extend_list = []
-                    for extend_image_id in result_info.list_extend_image_id():
+                    for extend_image_id in extend_image_index_list:
                         tmp_info = info.copy()
-                        tmp_info.update(self.manager.get_faiss_info_obj(extend_image_id).to_dict())
+                        tmp_info.update(self.manager.index_info_list[extend_image_id])
                         extend_list.append(tmp_info)
 
                     info[self.key_extend_list] = extend_list
 
                 image_result_list.append(info)
-            result_list.append(image_result_list)
 
-        return result_list
+            yield image_result_list
 
     def add_images(self, image_feature_list: list, image_info_list: list):
         assert len(image_feature_list) == len(image_info_list)
-        index_info = {index: image_info for index, image_info in enumerate(image_info_list)}
-        self.manager.train(image_feature_list, index_info=index_info)
+        self.manager.train(image_feature_list, info_list=image_info_list)
 
 
 __all__ = ("ImageIndexUtils",)

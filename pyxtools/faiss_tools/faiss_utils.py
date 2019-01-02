@@ -34,46 +34,12 @@ class IndexType(Enum):
         return "Flat"
 
 
-class FaissStoreInfo(object):
-    key_extend_list = "extend_list"
-    key_class_id = "class_id"
-    key_image_id = "index"
-
-    def __init__(self):
-        self.dict = {}
-
-    def to_dict(self) -> dict:
-        return self.dict
-
-    @classmethod
-    def from_dict(cls, index_info: dict = None):
-        info = FaissStoreInfo()
-        if index_info is None:
-            index_info = {}
-        info.dict = index_info
-        return info
-
-    def list_extend_image_id(self) -> list:
-        return self.dict.get(self.key_extend_list, [])
-
-    @classmethod
-    def parse_extend_list(cls, all_index_info: dict) -> dict:
-        class_id_vs_images = {}
-        for image_id, index_info in all_index_info.items():
-            class_id_vs_images.setdefault(index_info[cls.key_class_id], []).append(image_id)
-
-        # add extend list
-        for image_id, index_info in all_index_info.items():
-            extend_list_set = set(class_id_vs_images.get(index_info[cls.key_class_id], []))
-            if image_id in extend_list_set:
-                extend_list_set.remove(image_id)
-            index_info[cls.key_extend_list] = list(extend_list_set)
-        return all_index_info
-
-
 class FaissManager(object):
     """
     """
+    key_extend_list = "extend_list"
+    key_class_id = "class_id"
+    key_image_id = "index"
     not_found_id = -1
 
     def __init__(self, index_path: str, dimension: int,
@@ -91,9 +57,9 @@ class FaissManager(object):
         self._pkl_file = self.faiss_index_file + ".pkl"
         if os.path.exists(self._pkl_file):
             with open(self._pkl_file, "rb") as f:
-                self.index_info = pickle.load(f)
+                self.index_info_list = pickle.load(f)
         else:
-            self.index_info = {}
+            self.index_info_list = []
 
     @property
     def need_to_retrain(self) -> bool:
@@ -108,13 +74,24 @@ class FaissManager(object):
 
         return True
 
-    def get_faiss_info_obj(self, indices: int) -> FaissStoreInfo:
-        return FaissStoreInfo.from_dict(self.index_info.get(indices))
+    @classmethod
+    def parse_extend_list(cls, all_index_info: list) -> list:
+        class_id_vs_images = {}
+        for image_index, index_info in enumerate(all_index_info):
+            class_id_vs_images.setdefault(index_info[cls.key_class_id], []).append(image_index)
 
-    def train(self, feature_list, index_info: dict):
+        # add extend list
+        for image_index, index_info in enumerate(all_index_info):
+            extend_list_set = set(class_id_vs_images.get(index_info[cls.key_class_id], []))
+            if image_index in extend_list_set:
+                extend_list_set.remove(image_index)
+            index_info[cls.key_extend_list] = list(extend_list_set)
+        return all_index_info
+
+    def train(self, feature_list, info_list: list):
         self.prepare_index()
         # extend_list
-        self.index_info = FaissStoreInfo.parse_extend_list(index_info)
+        self.index_info_list = self.parse_extend_list(info_list)
 
         feature = self.reshape_feature_list(feature_list)
 
@@ -182,7 +159,7 @@ class FaissManager(object):
             faiss.write_index(self.faiss_index, self.faiss_index_file)
 
             with open(self._pkl_file, "wb") as f:
-                pickle.dump(self.index_info, f)
+                pickle.dump(self.index_info_list, f)
 
 
-__all__ = ("faiss", "IndexType", "FaissStoreInfo", "FaissManager")
+__all__ = ("faiss", "IndexType", "FaissManager")
