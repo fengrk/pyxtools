@@ -1,9 +1,19 @@
 language: python
+
+addons:
+  apt:
+    sources:
+    packages:
+    - libopenblas-dev
+    - libomp-dev
+
 python:
 - '3.6'
 install:
 - pip install -r requirements.txt
-script: python -m unittest
+script:
+- export OMP_NUM_THREADS=4
+- python -m unittest
 deploy:
   provider: pypi
   user: frkhit
