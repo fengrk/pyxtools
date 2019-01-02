@@ -135,20 +135,19 @@ class FaissManager(object):
             feature = np.vstack(feature_list).reshape((len(feature_list), self.dimension))
         return feature
 
-    def search(self, feature_list, top_k=10) -> (list, list):
+    def search(self, feature_list, top_k=10) -> (np.ndarray, np.ndarray):
         self.prepare_index()
-        feature = self.reshape_feature_list(feature_list)
-        distance_list, indices = self.faiss_index.search(feature, top_k)
+        feature_list = self.reshape_feature_list(feature_list)
+        length = feature_list.shape[0]
 
-        if isinstance(feature_list, list):
-            length = len(feature_list)
-        else:
-            length = feature_list.shape[0]
+        time_start = time.time()
+        distance_list, indices = self.faiss_index.search(feature_list, top_k)
+        self.logger.info("cost {}s to search {} feature".format(time.time() - time_start, length))
 
         distance_list = distance_list.reshape((length, top_k))
         indices = indices.reshape((length, top_k))
 
-        return [distance for distance in distance_list], [indice for indice in indices]
+        return distance_list, indices
 
     def _restore(self):
         """
