@@ -35,6 +35,7 @@ setup(name="pyxtools",
           "chardet",
           "aiohttp>=3.1.3",
           "faiss-prebuilt",
+          "SQLAlchemy",
       ],
 
       author="frkhit",

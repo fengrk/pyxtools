@@ -6,7 +6,10 @@ import unittest
 import numpy as np
 import os
 
-from ..pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
+try:
+    from pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
+except ImportError:
+    from pyxtools.pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
 
 
 class TestSqlAlchemy(unittest.TestCase):
