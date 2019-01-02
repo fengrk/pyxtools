@@ -2,10 +2,11 @@
 from __future__ import absolute_import
 
 import logging
-import os
 import pickle
 import sqlite3
 import time
+
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,13 @@ class AbstractCache(object):
     def set(self, key: str, value: object, ttl: int = 1e10):
         return self._set(key, value, ttl)
 
+    def unsafe_set(self, key: str, value: object, ttl: int = 1e10):
+        return self._unsafe_set(key, value, ttl)
+
     def _set(self, key: str, value: object, ttl: int):
+        raise NotImplemented
+
+    def _unsafe_set(self, key: str, value: object, ttl: int):
         raise NotImplemented
 
     def _get(self, key: str) -> object:
@@ -82,6 +89,10 @@ class SqliteCache(AbstractCache):
         finally:
             conn.close()
 
+    def _unsafe_set(self, key: str, value: object, ttl: int):
+        logger.warning("unsafe_set == set in {}".format(self.__class__.__name__))
+        return self._set(key, value, ttl)
+
     def _get_connect(self):
         if not os.path.exists(self.cache_file):
             conn = sqlite3.connect(self.cache_file)
@@ -125,11 +136,14 @@ class FileCache(AbstractCache):
         return None
 
     def _set(self, key: str, value: object, ttl: int):
+        self._unsafe_set(key, value, ttl)
+        self._write(self.cache)
+
+    def _unsafe_set(self, key: str, value: object, ttl: int):
         if value is None and key in self.cache:
             self.cache.pop(key)
         else:
             self.cache[key] = (value, self._get_exp_time(ttl))
-        self._write(self.cache)
 
 
 __all__ = ("SqliteCache", "FileCache", "AbstractCache")
