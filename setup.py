@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from pkg_resources import parse_requirements
 from setuptools import setup, find_packages
 
 ver_dic = {}
@@ -10,6 +10,8 @@ finally:
     version_file.close()
 
 exec(compile(version_file_contents, "version.py", 'exec'), ver_dic)
+
+install_req_list = [str(ir) for ir in parse_requirements(open("requirements.txt", "r").readlines())]
 
 setup(name="pyxtools",
       version=ver_dic["VERSION_TEXT"],
@@ -30,14 +32,7 @@ setup(name="pyxtools",
           'Topic :: Utilities',
       ],
 
-      install_requires=[
-          "requests",
-          "chardet",
-          "aiohttp>=3.1.3",
-          "faiss-prebuilt",
-          "SQLAlchemy",
-      ],
-
+      install_requires=install_req_list,
       author="frkhit",
       url="https://github.com/frkhit/pyxtools",
       author_email="frkhit@gmail.com",
