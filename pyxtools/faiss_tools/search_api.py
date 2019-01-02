@@ -23,11 +23,20 @@ class ImageIndexUtils(object):
         self._key_top_k = "top"
 
     def image_search(self, feature_list: list, top_k: int = 3, extend: bool = False) -> list:
+        """
+            for each feature, return list like: [(1, [100], 0.10), (3,[], 0.30), ...]
+        """
         return [
             result for result in self.image_search_iterator(feature_list=feature_list, top_k=top_k, extend=extend)
         ]
 
+    def get_image_info(self, image_index: int) -> dict:
+        return self.manager.index_info_list[image_index]
+
     def image_search_iterator(self, feature_list: list, top_k: int = 3, extend: bool = False):
+        """
+            for each feature, return list like: [(1, [100], 0.10), (3,[], 0.30), ...]
+        """
         distance_list, indices = self.manager.search(feature_list, top_k=top_k)
 
         for index in range(distance_list.shape[0]):
@@ -38,23 +47,14 @@ class ImageIndexUtils(object):
                 if image_index == self.manager.not_found_id:
                     break
 
-                result_info = self.manager.index_info_list[image_index]
-                info = {self._key_distance: distance_list[index][i], self._key_top_k: i}
-                info.update(result_info)
-                extend_image_index_list = info.pop(self.manager.key_extend_list) if \
-                    result_info.get(self.manager.key_extend_list) else None
-
-                # 扩展
-                if extend and extend_image_index_list:
-                    extend_list = []
-                    for extend_image_id in extend_image_index_list:
-                        tmp_info = info.copy()
-                        tmp_info.update(self.manager.index_info_list[extend_image_id])
-                        extend_list.append(tmp_info)
-
-                    info[self.key_extend_list] = extend_list
-
-                image_result_list.append(info)
+                if extend:
+                    image_result_list.append(
+                        (image_index,
+                         self.manager.index_info_list[image_index].get(self.manager.key_extend_list, []),
+                         distance_list[index][i])
+                    )
+                else:
+                    image_result_list.append((image_index, [], distance_list[index][i]))
 
             yield image_result_list
 

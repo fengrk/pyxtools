@@ -10,6 +10,30 @@ import functools
 import re
 
 
+class TimeCostHelper(object):
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self._time_start = time.time()
+        self._last_time = time.time()
+
+    def dot(self, info_format: str = None):
+        now = time.time()
+        time_cost_seconds = now - self._last_time
+        self._last_time = now
+        if info_format:
+            self.logger.info(info_format.format(time_cost_seconds))
+        else:
+            self.logger.info("Time cost {}s".format(time_cost_seconds))
+
+    def sum(self, info_format: str = None):
+        now = time.time()
+        time_cost_seconds = now - self._time_start
+        if info_format:
+            self.logger.info(info_format.format(time_cost_seconds))
+        else:
+            self.logger.info("Total time cost {}s".format(time_cost_seconds))
+
+
 def time_cost(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -55,4 +79,4 @@ def parse_c_profile_file(prof_file: str):
     p.strip_dirs().sort_stats("cumtime").print_stats(10, 1.0, ".*")
 
 
-__all__ = ("time_cost", "do_c_profile", "parse_c_profile_file")
+__all__ = ("time_cost", "do_c_profile", "parse_c_profile_file", "TimeCostHelper")
