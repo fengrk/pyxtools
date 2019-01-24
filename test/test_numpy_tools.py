@@ -8,7 +8,12 @@ import unittest
 
 import numpy as np
 
-from pyxtools import global_init_logger, NormType, calc_distance_pairs_by_scipy, calc_distance_pairs
+from pyxtools import global_init_logger, NormType, calc_distance_pairs
+
+try:
+    from pyxtools.basic_tools.numpy_tools import _calc_distance_pairs_by_scipy
+except ImportError:
+    from pyxtools.pyxtools.basic_tools.numpy_tools import _calc_distance_pairs_by_scipy
 
 global_init_logger()
 
@@ -68,7 +73,7 @@ class TestNumpy(unittest.TestCase):
         # scipy: np.zeros((m, m + k))
         _time_start = time.time()
         for _ in range(10):
-            distance_scipy = calc_distance_pairs_by_scipy(vec1, vec2)
+            distance_scipy = _calc_distance_pairs_by_scipy(vec1, vec2)
         t1 = time.time() - _time_start
         # self.logger.info("distance is {}".format(distance_scipy))
         # self.logger.info("distance_dumpy is {}".format(distance_dumpy))
@@ -83,28 +88,10 @@ class TestNumpy(unittest.TestCase):
         t2 = time.time() - _time_start
 
         self.assertTrue(distance_np.shape == (m, m + k))
-
-        # todo calc_distance_pairs is fast, but not accurate enough
         self.logger.info("scipy time is {}, numpy time is {}".format(t1, t2))
         self.assertGreater(t1, t2)
-
-        nan_where = np.argwhere(np.isnan(distance_np))
-        if len(nan_where) > 0:
-            self.logger.info("nan where is {}".format(nan_where))
-
-            tmp_result = [np.dot(vec1, vec2.T), np.sum(np.square(vec2), axis=1),
-                          np.transpose([np.sum(np.square(vec1), axis=1)]), distance_np]
-
-            for index, x in enumerate(tmp_result):
-                _nan_where = np.argwhere(np.isnan(x))
-                if len(_nan_where):
-                    self.logger.info("func {}<shape {}> found nan {}".format(index, x.shape, _nan_where))
-
-            for index, x in enumerate(tmp_result):
-                for f in nan_where:
-                    self.logger.info("func {}<shape {}> value[{}] is {}".format(index, x.shape, f, x[f]))
-        else:
-            self.assertTrue(self._compare_numpy(distance_dumpy, distance_np, 1e-4))
+        self.assertTrue(self._compare_numpy(distance_dumpy, distance_np, 1e-4))
+        self.assertTrue(self._compare_numpy(distance_scipy, distance_np, 1e-4))
 
     def testLen(self):
         a = np.random.random((5, 4))
