@@ -44,6 +44,19 @@ class TestNumpy(unittest.TestCase):
         self.logger.info("norm np is {}".format(norm_np))
         self.assertTrue((abs(norm_np - NormType.all.normalize(input_data)) < 1e-4).all())
 
+    def testNormTypeReturnNorm(self):
+        input_data = np.asarray([[1.0, 2, 3, 1], [4.0, 5, 6, 4], [7.0, 8, 9, 7]])
+        self.assertTrue(input_data.shape == (3, 4))
+
+        feature, norm = NormType.all.normalize_and_return_norm(input_data)
+        self.assertTrue(isinstance(norm, float))
+
+        feature, norm = NormType.l2.normalize_and_return_norm(input_data)
+        self.assertTrue(isinstance(norm, np.ndarray))
+
+        feature, norm = NormType.none.normalize_and_return_norm(input_data)
+        self.assertTrue(norm is None)
+
     def testDistance(self):
         m, n, k = 5, 512, 25
         vec1 = np.random.random((m, n))

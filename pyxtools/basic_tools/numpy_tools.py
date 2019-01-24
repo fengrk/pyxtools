@@ -37,7 +37,7 @@ class NormType(Enum):
             if _norm_float == 0.0:
                 logging.warning("using {} because norm == 0.0 when normalize with NormType.all mode".format(_np_zero))
                 _norm_float += _np_zero
-            return feature / _norm_float, _norm_float
+            return feature / _norm_float, float(_norm_float)
         elif self.name == "l2":
             logging.warning("using {} if norm == 0 when normalize with NormType.l2 mode".format(_np_zero))
             norm_feature = np.linalg.norm(feature, ord=2, axis=0)
