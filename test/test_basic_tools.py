@@ -5,7 +5,7 @@ import unittest
 
 import os
 
-from pyxtools import iter_list_with_size, FileCache
+from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file
 
 
 class TestBasicTools(unittest.TestCase):
@@ -48,3 +48,19 @@ class TestBasicTools(unittest.TestCase):
 
         if os.path.exists(cache_file):
             os.remove(cache_file)
+
+    def testGetBaseName(self):
+        get_base_name_of_file("E:\\R\\a")
+        self.assertEqual(get_base_name_of_file("./a"), "a")
+        self.assertEqual(get_base_name_of_file("./a/"), "a")
+        self.assertEqual(get_base_name_of_file("./a/c"), "c")
+        self.assertEqual(get_base_name_of_file("./a//c"), "c")
+        self.assertEqual(get_base_name_of_file("./a//b/c"), "c")
+        self.assertEqual(get_base_name_of_file("./a//b/c/"), "c")
+
+        self.assertEqual(get_base_name_of_file("E:\\R\\a"), "a")
+        self.assertEqual(get_base_name_of_file("E:\\R\\a\\"), "a")
+        self.assertEqual(get_base_name_of_file("E:\\R\\a\\c"), "c")
+        self.assertEqual(get_base_name_of_file("E:\\R\\a\\c"), "c")
+        self.assertEqual(get_base_name_of_file("E:\\R\\a\\b\\c"), "c")
+        self.assertEqual(get_base_name_of_file("E:\\R\\a\\b\\c\\"), "c")

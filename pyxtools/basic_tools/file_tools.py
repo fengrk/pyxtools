@@ -1,14 +1,15 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import logging
+import time
+import zipfile
+
 import fnmatch
 import functools
-import logging
 import os
 import shutil
 import tarfile
-import time
-import zipfile
 
 
 def list_files(folder):
@@ -122,3 +123,19 @@ def check_file_exists(func):
 def zip_compress_file(src_file_path, zip_file_path):
     with zipfile.ZipFile(zip_file_path, mode="w") as zf:
         zf.write(src_file_path, os.path.basename(src_file_path), compress_type=zipfile.ZIP_DEFLATED)
+
+
+def get_base_name_of_file(path_or_file_name: str) -> str:
+    if path_or_file_name.find("\\") > -1:
+        path_or_file_name = path_or_file_name.replace("\\", "/")
+
+    name_list = path_or_file_name.split("/")
+    for name in name_list[::-1]:
+        if name:
+            return name
+
+    return path_or_file_name
+
+
+__all__ = ("get_base_name_of_file", "zip_compress_file", "check_file_exists", "list_files", "remove_empty_sub_dir",
+           "compress_by_tar", "include_patterns")
