@@ -28,16 +28,23 @@ class NormType(Enum):
     all = 2
 
     def normalize(self, feature: np.ndarray) -> np.ndarray:
+        normalize_feature, _ = self.normalize_and_return_norm(feature)
+        return normalize_feature
 
+    def normalize_and_return_norm(self, feature: np.ndarray) -> (np.ndarray, object):
         if self.name == "all":
-            logging.warning("using {} if norm == 0".format(_np_zero))
-            return feature / (np.sqrt(np.sum(np.power(feature, 2))) + _np_zero)
+            _norm_float = np.sqrt(np.sum(np.power(feature, 2)))  # _norm_float is float
+            if _norm_float == 0.0:
+                logging.warning("using {} because norm == 0.0 when normalize with NormType.all mode".format(_np_zero))
+                _norm_float += _np_zero
+            return feature / _norm_float, _norm_float
         elif self.name == "l2":
-            logging.warning("using {} if norm == 0".format(_np_zero))
+            logging.warning("using {} if norm == 0 when normalize with NormType.l2 mode".format(_np_zero))
             norm_feature = np.linalg.norm(feature, ord=2, axis=0)
-            return feature / np.add(norm_feature, _np_zero, out=norm_feature, where=norm_feature == 0)
+            safe_norm_feature = np.add(norm_feature, _np_zero, out=norm_feature, where=norm_feature == 0)
+            return feature / safe_norm_feature, safe_norm_feature
         elif self.name == "none":
-            return feature
+            return feature, None
         else:
             raise ValueError("unknown NormType: {}".format(self.name))
 
