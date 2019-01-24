@@ -3,7 +3,9 @@ from __future__ import absolute_import
 
 import subprocess
 from urllib.request import urlopen
+
 import os
+
 from .async_http_tool import *
 from .cache_tools import *
 from .encode_tools import *
@@ -11,6 +13,7 @@ from .file_tools import *
 from .iterator_utils import *
 from .log import *
 from .md5_tools import *
+from .numpy_tools import *
 from .os_tools import *
 from .pprof_tools import *
 from .request_tools import *
