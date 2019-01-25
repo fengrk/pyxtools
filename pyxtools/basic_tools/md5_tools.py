@@ -2,12 +2,12 @@
 from __future__ import unicode_literals
 
 import math
-
-import hashlib
 import uuid
 
+import hashlib
 
-def create_guid():
+
+def create_guid() -> str:
     return str(uuid.uuid1()).lower()
 
 
@@ -22,13 +22,15 @@ def create_fake_random_string(length: int) -> str:
 def get_md5(string) -> str:
     """
     use in python3.6:
-    get_md5("x".encode("utf-8"))
     """
-    hash_md5 = hashlib.md5(string)
+    if isinstance(string, str):
+        hash_md5 = hashlib.md5(string.encode("utf-8"))
+    else:
+        hash_md5 = hashlib.md5(string)
     return hash_md5.hexdigest()
 
 
-def get_md5_for_file(file_or_filename):
+def get_md5_for_file(file_or_filename) -> str:
     if isinstance(file_or_filename, str):
         hash_md5 = hashlib.md5()
         with open(file_or_filename, "rb") as f:
