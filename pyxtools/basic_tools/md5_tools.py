@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
 
+import math
+
 import hashlib
 import uuid
 
@@ -9,7 +11,15 @@ def create_guid():
     return str(uuid.uuid1()).lower()
 
 
-def get_md5(string):
+def create_fake_random_string(length: int) -> str:
+    assert length > 0
+
+    md5_list = [get_md5(create_guid().encode("utf-8")) for _ in range(math.ceil(length / 30) + 1)]
+
+    return "".join(md5_list)[:length]
+
+
+def get_md5(string) -> str:
     """
     use in python3.6:
     get_md5("x".encode("utf-8"))
