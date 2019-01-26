@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import subprocess
+from decimal import getcontext, Decimal
 from urllib.request import urlopen
 
 import os
@@ -88,3 +89,14 @@ def remove_path_or_file(path_or_file_name):
     else:
         # file
         os.remove(path_or_file_name)
+
+
+def get_pretty_float(num: float, count: int = 2) -> str:
+    """
+        指定有效数字的科学计数法显示
+    Args:
+        num: float
+        count: int
+    """
+    getcontext().prec = count
+    return (Decimal(num) / Decimal(1)).to_eng_string()

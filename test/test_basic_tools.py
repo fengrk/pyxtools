@@ -5,7 +5,7 @@ import unittest
 
 import os
 
-from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file
+from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file, get_pretty_float
 
 
 class TestBasicTools(unittest.TestCase):
@@ -64,3 +64,13 @@ class TestBasicTools(unittest.TestCase):
         self.assertEqual(get_base_name_of_file("E:\\R\\a\\c"), "c")
         self.assertEqual(get_base_name_of_file("E:\\R\\a\\b\\c"), "c")
         self.assertEqual(get_base_name_of_file("E:\\R\\a\\b\\c\\"), "c")
+
+    def testPrettyFloat(self):
+        self.assertEqual(get_pretty_float(1000.24575, count=1), "1E+3")
+        self.assertEqual(get_pretty_float(1000.24575, count=2), "1.0E+3")
+        self.assertEqual(get_pretty_float(1000.24575, count=3), "1.00E+3")
+        self.assertEqual(get_pretty_float(1000.24575, count=4), "1000")
+        self.assertEqual(get_pretty_float(1000.24575, count=5), "1000.2")
+        self.assertEqual(get_pretty_float(1000.24575, count=6), "1000.25")
+        self.assertEqual(get_pretty_float(1000.24575, count=7), "1000.246")
+        self.assertEqual(get_pretty_float(1000.24575, count=8), "1000.2458")
