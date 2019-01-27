@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
-from pkg_resources import parse_requirements
 from setuptools import setup, find_packages
 
-ver_dic = {}
-version_file = open("version.py")
-try:
-    version_file_contents = version_file.read()
-finally:
-    version_file.close()
-
-exec(compile(version_file_contents, "version.py", 'exec'), ver_dic)
-
-install_req_list = [str(ir) for ir in parse_requirements(open("requirements.txt", "r").readlines())]
+# version info
+VERSION = (1, 0, 2)
+VERSION_STATUS = ""
+VERSION_TEXT = ".".join(str(x) for x in VERSION) + VERSION_STATUS
 
 setup(name="pyxtools",
-      version=ver_dic["VERSION_TEXT"],
+      version=VERSION_TEXT,
       description="simple tool for Python3.6",
       long_description=open("README.rst", "r").read(),
       classifiers=[
@@ -31,10 +24,22 @@ setup(name="pyxtools",
           'Topic :: Software Development :: Libraries',
           'Topic :: Utilities',
       ],
-
-      install_requires=install_req_list,
+      install_requires=[
+          "requests",
+          "chardet",
+          "Pillow",
+          "opencv-python",
+          "numpy",
+          "aiohttp",
+          "matplotlib",
+          "faiss-prebuilt",
+          "SQLAlchemy",
+          "scipy",
+      ],
       author="frkhit",
       url="https://github.com/frkhit/pyxtools",
       author_email="frkhit@gmail.com",
       license="MIT",
-      packages=find_packages())
+      packages=find_packages(),
+      package_data={'': ["LICENSE", "README.rst", "MANIFEST.in"]},
+      include_package_data=True, )
