@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import argparse
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
@@ -80,4 +81,13 @@ def global_init_logger(logger_level=logging.INFO, log_file: str = None, reset_lo
         _inited_logger = (log_file, list(reset_logger_name_list), logger_level)
 
 
-__all__ = ("global_init_logger", "get_time_rotating_handler", "get_rotating_file_handler")
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Unsupported value encountered.')
+
+
+__all__ = ("global_init_logger", "get_time_rotating_handler", "get_rotating_file_handler", "str2bool")
