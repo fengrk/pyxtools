@@ -94,6 +94,33 @@ def create_mask(image):
     return mask
 
 
+def create_blank(width, height, rgb_color=(0, 0, 0)):
+    """Create new image(numpy array) filled with certain color in RGB
+        ref: https://stackoverflow.com/questions/4337902/how-to-fill-opencv-image-with-one-solid-color
+        author: Kimmo
+
+        usage:
+            import cv2
+            import numpy as np
+
+            # Create new blank 300x300 red image
+            width, height = 300, 300
+
+            red = (255, 0, 0)
+            image = create_blank(width, height, rgb_color=red)
+            cv2.imwrite('red.jpg', image)
+    """
+    # Create black blank image
+    image = np.zeros((height, width, 3), np.uint8)
+
+    # Since OpenCV uses BGR, convert the color first
+    color = tuple(reversed(rgb_color))
+    # Fill image with color
+    image[:] = color
+
+    return image
+
+
 __all__ = ("change_jpg_to_gray_and_crop", "read_image", "save_image", "resize_image", "convert_jpg_to_gray",
            "convert_jpg_to_gray_and_crop", "change_jpg_to_gray", "change_jpg_to_gray_and_crop",
-           "sharpen_image", "create_mask")
+           "sharpen_image", "create_mask", "create_blank")
