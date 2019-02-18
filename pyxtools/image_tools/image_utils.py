@@ -114,7 +114,7 @@ def show_images_file(image_list, mode=None, image_save_file=None, image_size: tu
                       math.ceil(image_size[1] * len(image_list) / dpi))
         )
     else:
-        show_images(image_obj_list, mode, image_save_file)
+        show_images(image_obj_list, mode, image_save_file, dpi=dpi)
 
 
 def show_image(image: Image, mode: str = None, text: str = None, ):
