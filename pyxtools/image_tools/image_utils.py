@@ -206,6 +206,11 @@ def gen_tf_bounding_boxes(boxes):
     return offset_height, offset_width, target_height, target_width
 
 
+def expend_bounding_box(boxes, pix: int = 5):
+    left, upper, right, lower = boxes
+    return max(0, left - pix), max(0, upper - pix), right + pix, lower + pix
+
+
 __all__ = ("get_image", "create_blank_image", "show_images", "show_images_file", "show_image",
            "np_image_to_pil_image", "image_to_array", "show_hot_graph", "crop_image_by_boxes",
-           "crop_image_array_by_boxes", "gen_tf_bounding_boxes")
+           "crop_image_array_by_boxes", "gen_tf_bounding_boxes", "expend_bounding_box")
