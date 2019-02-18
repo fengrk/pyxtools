@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import math
+
 import PIL.Image as Image
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -34,18 +36,19 @@ def create_blank_image(image: Image, mode: str = "RGB") -> Image:
         return np_image_to_pil_image(blank_image_array)
 
 
-def show_images(image_list, mode=None, image_save_file: str = None, fig_size=(64, 64)):
+def show_images(image_list, mode=None, image_save_file: str = None, fig_size=(64, 64), dpi=None):
     """
 
     :param mode: None|str, for example, Greys
     :param image_list: Image object list
     :param image_save_file: plt.show() if image_save_file is None, else save image
     :param fig_size: tuple
+    :param dpi: int,
     """
     if fig_size is None:
-        fig = plt.figure()
+        fig = plt.figure(dpi=dpi)
     else:
-        fig = plt.figure(figsize=fig_size)
+        fig = plt.figure(figsize=fig_size, dpi=dpi)
 
     index = 0
     rows = len(image_list)
@@ -54,7 +57,8 @@ def show_images(image_list, mode=None, image_save_file: str = None, fig_size=(64
         blank_image = None
         for image in row_image:
             index += 1
-            fig.add_subplot(rows, columns, index)
+            ax = fig.add_subplot(rows, columns, index)
+            ax.axis('off')
             if image is None:
                 if blank_image is None:
                     blank_image = create_blank_image(row_image[0])
@@ -65,30 +69,52 @@ def show_images(image_list, mode=None, image_save_file: str = None, fig_size=(64
             else:
                 plt.imshow(image, cmap=mode)
 
+    plt.axis('off')
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    plt.margins(0, 0)
+
     if image_save_file is None:
         plt.show()
     else:
         plt.savefig(image_save_file)
 
 
-def show_images_file(image_list, mode=None, image_save_file=None):
+def show_images_file(image_list, mode=None, image_save_file=None, image_size: tuple = None, dpi: int = None):
     """
 
     :param mode: None|str, for example, Greys
     :param image_list: image file name list
     :param image_save_file: plt.show() if image_save_file is None, else save image
+    :param image_size: (width, height)
+    :param dpi: int
     """
     image_obj_list = []
     for row_image in image_list:
         row_image_obj_list = []
         for image_file in row_image:
             if os.path.exists(image_file):
-                row_image_obj_list.append(Image.open(image_file))
+                if image_size:
+                    img = get_image(image_file, image_size[0], image_size[1])
+                else:
+                    img = get_image(image_file)
+                row_image_obj_list.append(img)
             else:
                 row_image_obj_list.append(None)
         image_obj_list.append(list(row_image_obj_list))
 
-    show_images(image_obj_list, mode, image_save_file)
+    if image_size:
+        if dpi is None:
+            dpi = 100 if image_size[0] > 100 else image_size[0]
+
+        show_images(
+            image_obj_list, mode, image_save_file, dpi=dpi,
+            fig_size=(math.ceil(image_size[0] * max([len(row) for row in image_list]) / dpi),
+                      math.ceil(image_size[1] * len(image_list) / dpi))
+        )
+    else:
+        show_images(image_obj_list, mode, image_save_file)
 
 
 def show_image(image: Image, mode: str = None, text: str = None, ):
