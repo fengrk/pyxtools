@@ -25,7 +25,7 @@ def random_choice(src_list, k: int = 1, unique: bool = True):
 
     assert k <= len(src_list)
     tmp_list = list(src_list)
-    random.seed(0)
+    random.seed()  # todo: random.seed(0) is wrong here!
     random.shuffle(tmp_list)
     random.shuffle(tmp_list)
     return tmp_list[:k]

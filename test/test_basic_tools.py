@@ -5,7 +5,7 @@ import unittest
 
 import os
 
-from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file, get_pretty_float
+from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file, get_pretty_float, random_choice
 
 
 class TestBasicTools(unittest.TestCase):
@@ -74,3 +74,13 @@ class TestBasicTools(unittest.TestCase):
         self.assertEqual(get_pretty_float(1000.24575, count=6), "1000.25")
         self.assertEqual(get_pretty_float(1000.24575, count=7), "1000.246")
         self.assertEqual(get_pretty_float(1000.24575, count=8), "1000.2458")
+
+    def testRandomChoice(self):
+        rl = [i for i in range(10000)]
+
+        x1 = random_choice(rl, k=100, unique=True)
+        y1 = random_choice(rl, k=100, unique=True)
+
+        self.assertTrue(len(set(x1)) == 100)
+        self.assertTrue(len(set(y1)) == 100)
+        self.assertFalse(";".join([str(i) for i in x1]) == ";".join([str(i) for i in y1]))
