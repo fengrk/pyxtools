@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 # version info
-VERSION = (2019, 2, 18, 3)
+VERSION = (2019, 4, 20, 0)
 VERSION_STATUS = ""
 VERSION_TEXT = ".".join(str(x) for x in VERSION) + VERSION_STATUS
 
@@ -32,7 +32,7 @@ setup(name="pyxtools",
           "numpy",
           "aiohttp",
           "matplotlib",
-          "faiss-prebuilt",
+          "faiss",
           "SQLAlchemy",
           "scipy",
       ],
