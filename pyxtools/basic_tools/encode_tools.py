@@ -16,11 +16,11 @@ def smart_decoder(raw_content, default_encoding_list=("utf-8", "gb18030")):
 
     try:
         return raw_content.decode(encoding)
-    except UnicodeEncodeError as e:
+    except UnicodeDecodeError as e:
         for encoding in default_encoding_list:
             try:
                 return raw_content.decode(encoding)
-            except UnicodeEncodeError as e:
+            except UnicodeDecodeError as e:
                 pass
         raise e
 
