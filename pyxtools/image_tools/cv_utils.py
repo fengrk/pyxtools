@@ -8,7 +8,7 @@ import numpy as np
 import os
 
 from .image_utils import crop_image_array_by_boxes
-from ..basic_tools import list_files
+from ..basic_tools.file_tools import list_files
 
 
 def read_image(file_name):

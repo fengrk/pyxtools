@@ -2,13 +2,12 @@
 from __future__ import absolute_import
 
 import logging
+import os
+import shutil
 import sys
 from optparse import OptionParser
 
-import os
-import shutil
-
-from ..basic_tools import list_files, global_init_logger, remove_empty_sub_dir, compress_by_tar
+from ..basic_tools.file_tools import compress_by_tar, list_files, remove_empty_sub_dir
 
 
 def parse_args(argv=None):
@@ -225,6 +224,7 @@ def export_package(package_name: str, target_package_name: str, common_package_l
 
 
 def export_package_helper():
+    from pyxtools.basic_tools.log import global_init_logger
     global_init_logger()
     if sys.argv[0] == "-c":
         argv = list(sys.argv)

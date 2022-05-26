@@ -1,11 +1,13 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import os
 import unittest
 
-import os
-
-from pyxtools import iter_list_with_size, FileCache, get_base_name_of_file, get_pretty_float, random_choice
+from pyxtools.basic_tools import get_pretty_float
+from pyxtools.basic_tools.cache_tools import FileCache
+from pyxtools.basic_tools.file_tools import get_base_name_of_file
+from pyxtools.basic_tools.iterator_utils import random_choice, iter_list_with_size
 
 
 class TestBasicTools(unittest.TestCase):

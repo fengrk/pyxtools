@@ -13,7 +13,7 @@ from subprocess import check_output
 import requests
 
 from .crlf_tools import change_crlf_mode_of_file, CRLF_VALUE
-from ..basic_tools import global_init_logger
+from ..basic_tools.log import global_init_logger
 
 logger = logging.getLogger(__name__)
 

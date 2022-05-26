@@ -1,15 +1,12 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import os
 import unittest
 
 import numpy as np
-import os
 
-try:
-    from pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
-except ImportError:
-    from pyxtools.pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
+from pyxtools.tmp_tools.sqlalchemy_demo import FeatureRecord, get_sqlite_engine, get_sqlite_session
 
 
 class TestSqlAlchemy(unittest.TestCase):

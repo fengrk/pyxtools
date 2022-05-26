@@ -8,12 +8,8 @@ import unittest
 
 import numpy as np
 
-from pyxtools import global_init_logger, NormType, calc_distance_pairs
-
-try:
-    from pyxtools.basic_tools.numpy_tools import _calc_distance_pairs_by_scipy
-except ImportError:
-    from pyxtools.pyxtools.basic_tools.numpy_tools import _calc_distance_pairs_by_scipy
+from pyxtools.basic_tools.log import global_init_logger
+from pyxtools.basic_tools.numpy_tools import NormType, calc_distance_pairs, _calc_distance_pairs_by_scipy
 
 global_init_logger()
 

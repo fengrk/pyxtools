@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-from ..basic_tools import get_md5
+from ..basic_tools.md5_tools import get_md5
 
 Base = declarative_base()
 

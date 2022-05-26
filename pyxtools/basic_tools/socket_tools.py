@@ -20,10 +20,10 @@ def port_is_used(addr: str, port: int) -> bool:
     return False
 
 
-def proxy_is_valid(proxy_url, url_tuple=None, timeout=10, async=False):
+def proxy_is_valid(proxy_url, url_tuple=None, timeout=10, async_mode=False):
     """
 
-    :type async: bool
+    :type async_mode: bool
     :param proxy_url: str, like "socks5://127.0.0.1:1080"
     :rtype: bool
     :type timeout: int
@@ -37,9 +37,9 @@ def proxy_is_valid(proxy_url, url_tuple=None, timeout=10, async=False):
         )
 
     if len(url_tuple) == 1:
-        async = False
+        async_mode = False
 
-    if async is False:
+    if async_mode is False:
         # blocking mode
         proxies = {'http': proxy_url, 'https': proxy_url}
 
@@ -54,7 +54,7 @@ def proxy_is_valid(proxy_url, url_tuple=None, timeout=10, async=False):
         result_list = [is_work(url) for url in url_tuple]
 
     else:
-        # async mode
+        # async_mode mode
         def response_func(content):
             return len(content) > 0
 

@@ -12,8 +12,9 @@ import operator
 import os
 import re
 from itertools import takewhile
-from ..dev_tools import md2html_by_github
-from ..basic_tools import get_md5, SqliteCache
+from ..dev_tools.git_tools import md2html_by_github
+from ..basic_tools.md5_tools import get_md5
+from ..basic_tools.cache_tools import SqliteCache
 
 from flask_flatpages.page import Page as OldPage, cached_property, yaml
 from werkzeug.utils import import_string
