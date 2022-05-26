@@ -9,6 +9,7 @@ addons:
 python:
 - '3.6'
 install:
+- pip install sqlalchemy faiss
 - pip install .
 script:
 - python -m unittest discover -s ./test
