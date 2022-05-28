@@ -89,6 +89,131 @@ class _RecvObj:
         return 1 if had_data else 0, self.waited if self.waited > 0 else 0
 
 
+class WsP2PServerHandler(tornado.websocket.WebSocketHandler):
+    clients: typing.Dict[str, typing.List['WsP2PServerHandler']] = {}  # 记录节点注册 websocket. {route_key: [ws]}
+    clients_counter: typing.Dict[str, int] = {}  # 记录节点注册 websocket. {route_key: counter}
+
+    # base var
+    route_key: str = None
+    device_id: str = None
+    ws_id: int = None
+
+    def __init__(self, *args, **kwargs):
+        super(WsP2PServerHandler, self).__init__(*args, **kwargs)
+        self.log: logging.Logger = logging.getLogger(self.__class__.__name__)
+
+    def check_origin(self, origin):
+        """ 校验权限 """
+        self.log.info(f"[check_origin][origin {origin}]")
+        return True
+
+    def _get_all_arguments(self, ) -> typing.Dict[str, str]:
+        """ """
+        headers = self.request.headers or {}
+        args = self.request.arguments
+        params = {}
+        for a in args:
+            params[a.lower()] = self.get_argument(a)
+        for k, v in headers.items():
+            params[k.lower()] = v
+
+        return params
+
+    async def open(self):
+        """ 开启连接 """
+        kwargs = self._get_all_arguments()
+        self.route_key = kwargs.get('route_key', None)
+        self.device_id = kwargs.get('device_id', None)
+        if not self.route_key or not self.device_id:
+            self.close()
+            return
+
+        if not check_device_id(route_key=self.route_key, device_id=self.device_id):
+            self.close()
+            return
+
+        if self.route_key not in WsP2PServerHandler.clients:
+            WsP2PServerHandler.clients[self.route_key] = []
+            WsP2PServerHandler.clients_counter[self.route_key] = 0
+        WsP2PServerHandler.clients[self.route_key].append(self)
+        WsP2PServerHandler.clients_counter[self.route_key] += 1
+
+        self.ws_id = WsP2PServerHandler.clients_counter[self.route_key]
+        self.log.info(f"[OptWebsocket opened][route_key {self.route_key}, device_id {self.device_id}, "
+                      f"ws_id {self.ws_id}]"
+                      f"client device_id list {[x.device_id for x in WsP2PServerHandler.clients[self.route_key]]}")
+
+        # tell client: ws_id
+        asyncio.ensure_future(self.write_message(
+            message=MessageBytesUtils.build_message(
+                frame=MessageBytesUtils.build_frame(ws_id=0, msg_no=0),
+                msg=self.ws_id.to_bytes(MessageBytesUtils.ws_id_byte_size, byteorder='little', signed=False),
+            ),
+            binary=True
+        ))
+
+    def on_message(self, message: bytes):
+        """连接通信"""
+
+        async def _send_msg(_ws: 'WsP2PServerHandler', _msg, _binary):
+            # self.log.info(f"msg transfer to device_id {_ws.device_id}, msg {_msg}")
+            try:
+                await _ws.write_message(_msg, binary=_binary)
+            except Exception as e:
+                self.log.error(f"[on_message][device_id {_ws.device_id}, ws_id {_ws.ws_id}]"
+                               f"ws write_message error {e}")
+
+        binary = isinstance(message, bytes)
+        if not binary:
+            self.log.info(f"[on_message][route_key {self.route_key}, device_id {self.device_id},"
+                          f" ws_id {self.ws_id}]msg {message}")
+        else:
+            self.log.info(f"[on_message][route_key {self.route_key}, device_id {self.device_id},"
+                          f" ws_id {self.ws_id}]msg_size {len(message)}")
+
+        ws_list = WsP2PServerHandler.clients.get(self.route_key, []) or []
+        for ws in ws_list:
+            # self.log.info(f"[ws_list]device_id {ws.device_id}, ws_id {ws.ws_id}")
+            if ws.ws_id != self.ws_id:
+                asyncio.ensure_future(_send_msg(ws, message, binary))
+
+    def on_close(self):
+        """关闭连接"""
+
+        async def on_close_async():
+            try:
+                self.close()
+            except Exception as e:
+                self.log.exception('[close_ws]')
+
+            if self.route_key and self.route_key in WsP2PServerHandler.clients:
+                try:
+                    _remove_index = None
+                    for i, ws in enumerate(WsP2PServerHandler.clients[self.route_key]):
+                        if ws.ws_id == self.ws_id:
+                            _remove_index = i
+                            break
+                    if _remove_index is not None:
+                        WsP2PServerHandler.clients[self.route_key].pop(_remove_index)
+                except Exception as e:
+                    self.log.error('[on_close][device_id :{}]'.format(self.device_id), exc_info=True)
+
+        self.log.info(f"[close][route_key {self.route_key}, device_id {self.device_id}, "
+                      f"ws_id {self.ws_id}][OptWebsocket closed]")
+
+        asyncio.ensure_future(on_close_async())
+
+    def on_ping(self, data):
+        """
+        实时更新操作台设备过期时间
+        实时查询消息库，发送通知消息
+        @param data:
+        @return:
+        """
+        self.log.debug(f"[ping][route_key {self.route_key}, device_id {self.device_id}, "
+                       f"ws_id {self.ws_id}]")
+
+
 class WsP2PClient:
     def __init__(self, route_key: str, ws_url: str, logger: logging.Logger, device_hash: str = None):
         self.logger = logger
