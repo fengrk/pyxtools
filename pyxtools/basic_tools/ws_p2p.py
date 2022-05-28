@@ -2,6 +2,7 @@
 __author__ = 'rk.feng'
 
 import asyncio
+import gzip
 import logging  # noqa
 import os  # noqa
 import random
@@ -38,6 +39,42 @@ def check_device_id(route_key: str, device_id: str) -> bool:
     return True
 
 
+class MessageBytesUtils:
+    ws_id_byte_size = 2  # 16bit
+    msg_no_size = 4  # 32bit
+    frame_size = ws_id_byte_size + msg_no_size
+
+    @classmethod
+    def build_frame(cls, ws_id: int, msg_no: int) -> bytes:
+        """ """
+        return ws_id.to_bytes(MessageBytesUtils.ws_id_byte_size, byteorder='little', signed=False) + \
+               msg_no.to_bytes(MessageBytesUtils.msg_no_size, byteorder='little', signed=False)
+
+    @classmethod
+    def parse_frame(cls, frame: bytes) -> typing.Tuple[int, int]:
+        """ """
+        return int.from_bytes(frame[:MessageBytesUtils.ws_id_byte_size], byteorder="little", signed=False), \
+               int.from_bytes(frame[MessageBytesUtils.ws_id_byte_size:], byteorder="little", signed=False)
+
+    @classmethod
+    def build_message(cls, frame: bytes, msg: bytes) -> bytes:
+        return frame[:MessageBytesUtils.frame_size] + msg
+
+    @classmethod
+    def parse_message(cls, message: bytes) -> typing.Tuple[bytes, bytes]:
+        return message[:MessageBytesUtils.frame_size], message[MessageBytesUtils.frame_size:]
+
+    @classmethod
+    def compress_gzip(cls, msg_str: str) -> bytes:
+        """ """
+        return gzip.compress(msg_str.encode("utf-8"))
+
+    @classmethod
+    def decompress_gzip(cls, compressed_msg: bytes) -> str:
+        """ """
+        return gzip.decompress(compressed_msg).decode("utf-8")
+
+
 class _RecvObj:
     __slots__ = ("fut", "waited")
 
@@ -59,15 +96,19 @@ class WsP2PClient:
         self._ws_server_conn: WebSocketClientConnection = None
         self.device_id: str = build_device_id(route_key, device_hash)
         self.route_key: str = route_key
-        self._send_cache: typing.OrderedDict[str, asyncio.Future] = OrderedDict()
+        self._send_cache: typing.OrderedDict[bytes, asyncio.Future] = OrderedDict()
         self._recv_cache: typing.List[_RecvObj] = []
         self.ws_url = ws_url + f"?device_id={quote(self.device_id)}&route_key={quote(self.route_key)}"
+        self.ws_id: int = None
+        self.msg_no: int = 0
 
         self._lock = asyncio.Lock()
 
-    @classmethod
-    def _create_frame_id(cls) -> str:
-        return get_md5(create_guid())[:10]
+    def _create_frame_id(self, ) -> bytes:
+        try:
+            return MessageBytesUtils.build_frame(ws_id=self.ws_id, msg_no=self.msg_no)
+        finally:
+            self.msg_no += 1
 
     async def _open(self):
         """ """
@@ -86,11 +127,24 @@ class WsP2PClient:
                 on_message_callback=self._on_message_callback,
             )
 
-    def _on_message_callback(self, message: str):
-        async def on_message_async(msg: str):
-            if not msg or len(msg) < 10:
+            # check self.ws_id
+            for _ in range(10):
+                if self.ws_id is None:
+                    await asyncio.sleep(1)
+            if self.ws_id is None:
+                raise ValueError("self.ws_id cannot be null!")
+
+    def _on_message_callback(self, message: bytes):
+        async def on_message_async(msg: bytes):
+            # self.logger.info(f"on_message {message}")
+            frame_id, msg = MessageBytesUtils.parse_message(message=msg)
+            if self.ws_id is None:
+                ws_id, msg_no = MessageBytesUtils.parse_frame(frame=frame_id)
+                if ws_id == 0 and msg_no == 0:
+                    self.ws_id = int.from_bytes(msg, byteorder="little", signed=False)
+                    self.logger.info(f"[_on_message_callback][ws_id {self.ws_id}]ws_id set!")
                 return
-            frame_id, msg = msg[:10], msg[10:]
+
             if frame_id in self._send_cache:
                 # response
                 if not self._send_cache[frame_id].cancelled() and not self._send_cache[frame_id].done():
@@ -110,26 +164,29 @@ class WsP2PClient:
                     fut = recv_obj.fut
                     self._recv_cache.append(recv_obj)
 
-                fut.set_result((frame_id, msg))
+                if not fut.done() and not fut.cancelled():
+                    fut.set_result((frame_id, msg))
 
-        self.logger.info(f"on_message {message}")
         asyncio.ensure_future(on_message_async(message))
 
-    async def send(self, msg: str, timeout: int = 0) -> str:
+    async def send(self, msg: bytes, timeout: int = 0) -> bytes:
         await self._open()
+        assert self.ws_id is not None
         frame_id = self._create_frame_id()
         self._send_cache[frame_id] = asyncio.Future()
-        # self.logger.info("[send][device_id {}][frame_id {}][msg {}]".format(self.device_id, frame_id, msg))
         if self._ws_server_conn is None:
             raise ValueError("websocket closed!")
 
         try:
-            await self._ws_server_conn.write_message(message=frame_id + msg)
+            bin_message = MessageBytesUtils.build_message(
+                frame=frame_id,
+                msg=msg,
+            )
+            await self._ws_server_conn.write_message(message=bin_message, binary=True)
         except WebSocketClosedError:
             self._ws_server_conn = None
             raise ValueError("websocket closed!")
 
-        # self.logger.info("[send][device_id {}][frame_id {}][msg {}]".format(self.device_id, frame_id, msg))
         if timeout and timeout > 0:
             try:
                 res = await asyncio.wait_for(self._send_cache[frame_id], timeout=timeout)
@@ -143,8 +200,9 @@ class WsP2PClient:
 
         return res
 
-    async def receive(self, handle_msg: typing.Callable[[str, str], typing.Awaitable[str]]):
+    async def receive(self, handle_msg: typing.Callable[[bytes, bytes], typing.Awaitable[bytes]]):
         await self._open()
+        assert self.ws_id is not None
 
         # get req
         fut: asyncio.Future = None
@@ -173,14 +231,18 @@ class WsP2PClient:
         if handle_msg:
             resp = await handle_msg(frame_id, msg)
         else:
-            resp = ""
+            resp = b""
 
         # send resp
         if self._ws_server_conn is None:
             raise ValueError("websocket closed!")
 
         try:
-            await self._ws_server_conn.write_message(message=frame_id + resp)
+            bin_message = MessageBytesUtils.build_message(
+                frame=frame_id,
+                msg=resp,
+            )
+            await self._ws_server_conn.write_message(message=bin_message, binary=True)
         except WebSocketClosedError:
             self._ws_server_conn = None
             raise ValueError("websocket closed!")
@@ -201,10 +263,11 @@ class T(unittest.TestCase):
         self.ws_url = "wss://www.example.com/ws/p2p"
 
     def testServer(self):
-        async def consume(frame_id, msg: str) -> str:
-            self.logger.info(f"[on_receive_msg][frame_id {frame_id}][msg {msg}]")
+        async def consume(frame_id: bytes, msg: bytes) -> bytes:
             await asyncio.sleep(random.randint(1, 3))
-            return frame_id + "done" + msg
+            msg_str = MessageBytesUtils.decompress_gzip(compressed_msg=msg)
+            pprint(msg_str)
+            return MessageBytesUtils.compress_gzip(msg_str=msg_str + " done!")
 
         async def s():
             x = WsP2PClient(route_key=self.route_key, ws_url=self.ws_url, logger=self.logger)
@@ -214,13 +277,22 @@ class T(unittest.TestCase):
         asyncio.get_event_loop().run_until_complete(s())
 
     def testClient(self):
+        async def send(c, msg: str, timeout=5) -> str:
+            try:
+                res_bytes = await c.send(MessageBytesUtils.compress_gzip(msg_str=msg), timeout=timeout)
+                return MessageBytesUtils.decompress_gzip(res_bytes)
+            except Exception as e:
+                pass
+
+            return ""
+
         async def c():
             x = WsP2PClient(route_key=self.route_key, ws_url=self.ws_url, logger=self.logger)
             i = 0
             while True:
                 v_list = await asyncio.gather(*[
-                    x.send(f"msg{i + 1}", timeout=2),
-                    x.send(f"{i + 1}{i + 2}"),
+                    send(x, f"msg.{i + 1}"),
+                    send(x, f"msg.{i + 2}"),
                 ])
                 for v in v_list:
                     pprint(v)
