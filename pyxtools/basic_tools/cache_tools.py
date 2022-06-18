@@ -2,11 +2,13 @@
 from __future__ import absolute_import
 
 import logging
+import os
 import pickle
 import sqlite3
 import time
-
-import os
+import typing
+from enum import Enum, EnumMeta
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -146,4 +148,31 @@ class FileCache(AbstractCache):
             self.cache[key] = (value, self._get_exp_time(ttl))
 
 
-__all__ = ("SqliteCache", "FileCache", "AbstractCache")
+_lazy_build_enum_meta_lock = Lock()
+
+_T = typing.TypeVar('_T')
+
+
+class LazyProxy(typing.Generic[_T]):
+    __slots__ = ("func", "args", "kwargs")
+
+    def __init__(self, func: typing.Callable, *args, **kwargs, ):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    @property
+    def value(self) -> _T: ...  # function never called! only for type hinting!
+
+
+class LazyEnum(Enum, metaclass=EnumMeta):
+    """
+    ref: https://stackoverflow.com/a/66155229/5588431
+    """
+    def __getattribute__(self, name):
+        result = super().__getattribute__(name)
+        if name == 'value' and isinstance(result, LazyProxy):
+            with _lazy_build_enum_meta_lock:
+                result = result.func(*result.args, **result.kwargs)
+                setattr(self, '_value_', result)
+        return result
