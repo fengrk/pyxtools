@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+import asyncio
 import cProfile
+import functools
 import logging
 import pstats
-import time
-
-import functools
 import re
+import time
+import typing
 
 
 class TimeCostHelper(object):
@@ -34,15 +35,45 @@ class TimeCostHelper(object):
             self.logger.info("Total time cost {}s".format(time_cost_seconds))
 
 
-def time_cost(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        logging.info("<{}> cost time: {}s".format(func.__name__, time.time() - start_time))
-        return result
+def time_cost(min_s: float = None, handle_log: typing.Callable[[str], None] = print):
+    """计算时间
+    @time_cost(min_s=0.1, handle_log=print)
+    def a():
+        pass
 
-    return wrapper
+    @time_cost(min_s=0.1, handle_log=print)
+    async def b():
+        pass
+    """
+
+    async def async_wrapper(func, args, kwargs, _handle_log, _min_s):
+        time_start = time.time()
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            async_time_cost = time.time() - time_start
+            if _min_s is None or async_time_cost >= _min_s:
+                if _handle_log:
+                    _handle_log(f"[time_cost][func {func.__name__}]time cost {async_time_cost:.3f}s")
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            time_start = time.time()
+            if asyncio.iscoroutinefunction(func):
+                return async_wrapper(func, args, kwargs, handle_log, min_s)
+            else:
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    sync_time_cost = time.time() - time_start
+                    if min_s is None or sync_time_cost >= min_s:
+                        if handle_log:
+                            handle_log(f"[time_cost][func {func.__name__}]time cost {sync_time_cost:.3f}s")
+
+        return wrapper
+
+    return decorator
 
 
 def c_profile_demo():
@@ -54,6 +85,10 @@ def do_c_profile(prof_file: str):
     """
     ref: https://zhuanlan.zhihu.com/p/24495603
     Decorator for function profiling.
+
+    @do_c_profile(prof_file="/tmp/abc.prof")
+    def a():
+        pass
     """
 
     def wrapper(func):
