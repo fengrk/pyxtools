@@ -1,15 +1,14 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
-import logging
-import time
-import zipfile
-
 import fnmatch
 import functools
+import logging
 import os
 import shutil
 import tarfile
+import time
+import zipfile
 
 
 def list_files(folder):
@@ -71,7 +70,7 @@ def include_patterns(*patterns):
     return _ignore_patterns
 
 
-def compress_by_tar(source, target_file_name, absolute_dir=True):
+def compress_by_tar(source, target_file_name, absolute_dir=False):
     """
 
     :type source: str
@@ -82,6 +81,10 @@ def compress_by_tar(source, target_file_name, absolute_dir=True):
     file_type = os.path.basename(target_file_name).split(".")[-1]
     if file_type not in tar_filetype_list:
         raise ValueError("{} type not support!")
+    if file_type == "tar":
+        w_mode = "w:"
+    else:
+        w_mode = "w:gz"
 
     def tar_add_folder(_folder, _tar, _relative_path=None):
         if _relative_path is None:
@@ -90,12 +93,12 @@ def compress_by_tar(source, target_file_name, absolute_dir=True):
         for _file_name in os.listdir(_folder):
             _full_file_name = os.path.join(_folder, _file_name)
             _current_rpath = os.path.join(_relative_path, _file_name)
-            if os.path.isdir(_full_file_name):
+            if os.path.isdir(_full_file_name) and not os.path.islink(_full_file_name):
                 tar_add_folder(_full_file_name, _tar, _relative_path=_current_rpath)
             else:
                 tar.add(_full_file_name, arcname=_current_rpath)
 
-    with tarfile.open(target_file_name, "w:{}".format(file_type)) as tar:
+    with tarfile.open(target_file_name, w_mode) as tar:
         if os.path.isdir(source):
             if absolute_dir:
                 tar_add_folder(source, tar, _relative_path=source)
