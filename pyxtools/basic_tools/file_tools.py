@@ -6,6 +6,7 @@ import functools
 import logging
 import os
 import shutil
+import subprocess
 import tarfile
 import time
 import zipfile
@@ -111,6 +112,26 @@ def compress_by_tar(source, target_file_name, absolute_dir=False):
                 tar.add(source, arcname=os.path.basename(source))
 
 
+def tar_gz_compress_by_subprocess(source: str, gz_file: str):
+    """
+       compress source to .tar.gz
+    """
+    source_abspath = os.path.abspath(source)
+
+    # 压缩
+    try:
+        msg = subprocess.check_output(
+            f'''cd {os.path.dirname(source_abspath)} && tar -czf {gz_file} {os.path.basename(source)} && echo "TAR_SUCCESS" ''',
+            shell=True
+        ).decode().strip()
+        if not msg.endswith("TAR_SUCCESS"):
+            raise ValueError("tar command error")
+    except Exception:
+        if os.path.exists(gz_file):
+            os.remove(gz_file)
+        raise
+
+
 def check_file_exists(func):
     @functools.wraps(func)
     def check(*args, **kwargs):
@@ -141,4 +162,4 @@ def get_base_name_of_file(path_or_file_name: str) -> str:
 
 
 __all__ = ("get_base_name_of_file", "zip_compress_file", "check_file_exists", "list_files", "remove_empty_sub_dir",
-           "compress_by_tar", "include_patterns")
+           "compress_by_tar", "include_patterns", "tar_gz_compress_by_subprocess")

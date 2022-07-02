@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 # version info
-VERSION = (2022, 6, 25, 1)
+VERSION = (2022, 7, 2, 1)
 VERSION_STATUS = ""
 VERSION_TEXT = ".".join(str(x) for x in VERSION) + VERSION_STATUS
 

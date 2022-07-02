@@ -43,3 +43,13 @@ class TestBasicToolsCacheTools(unittest.TestCase):
 
         self.assertEqual(ReZoo.POW_ONE.value, 1.0)
         self.assertEqual(ReZoo.POW_TWO.value, 4.0)
+
+    def testLazyEnum(self):
+        """ """
+
+        class ReZoo(LazyEnum):
+            RE_NUM: LazyProxy[re.Pattern] = LazyProxy(re.compile, r'\d+')
+            RE_LETTER: LazyProxy[re.Pattern] = LazyProxy(re.compile, r'[A-Za-z]+')
+
+        self.assertRaises(TypeError, lambda: type("ReZoo2", (ReZoo,), {"RE_BLANK": LazyProxy(re.compile, r'\s+')}))
+        self.assertRaises(AttributeError, lambda: setattr(ReZoo, "RE_NUM", LazyProxy(re.compile, r'\d+')))
